@@ -47,7 +47,7 @@ function sortValue(row: PredictionTableRow, key: SortKey): string | number | nul
   }
 }
 
-export function PredictionTable({ rows, timezone, interactive = false }: { rows: PredictionTableRow[]; timezone?: string; interactive?: boolean }) {
+export function PredictionTable({ rows, timezone, interactive = false, pageScoped = false }: { rows: PredictionTableRow[]; timezone?: string; interactive?: boolean; pageScoped?: boolean }) {
   const [search, setSearch] = useState('');
   const [competition, setCompetition] = useState('');
   const [status, setStatus] = useState('');
@@ -89,7 +89,7 @@ export function PredictionTable({ rows, timezone, interactive = false }: { rows:
       <Select aria-label="Filter table outcome" value={outcome} onChange={(event) => setOutcome(event.target.value)}><option value="">All outcomes</option><option value="HOME_WIN">Home win</option><option value="DRAW">Draw</option><option value="AWAY_WIN">Away win</option><option value="NONE">No prediction</option></Select>
       <Button variant="ghost" size="sm" disabled={!hasChanges} onClick={reset}>Reset</Button>
     </div>}
-    {interactive && <div className="flex items-center justify-between gap-3 px-4 py-2 text-xs text-muted-foreground" role="status"><span>Showing {visibleRows.length} of {rows.length} rows</span><span>Click a column heading to sort</span></div>}
+    {interactive && <div className="flex items-center justify-between gap-3 px-4 py-2 text-xs text-muted-foreground" role="status"><span>Showing {visibleRows.length} of {rows.length} rows{pageScoped ? ' on this page' : ''}</span><span>Click a column heading to sort</span></div>}
     <Table><TableHeader><TableRow>{heading('Kickoff', 'kickoff')}{heading('Competition', 'competition')}{heading('Home team', 'homeTeam')}{heading('Away team', 'awayTeam')}{heading('Home %', 'homeProbability')}{heading('Draw %', 'drawProbability')}{heading('Away %', 'awayProbability')}{heading('Prediction', 'prediction')}{heading('Status', 'status')}<TableHead></TableHead></TableRow></TableHeader>
       <TableBody>{visibleRows.length ? visibleRows.map((row) => {
         const { fixture, prediction, reason } = row;

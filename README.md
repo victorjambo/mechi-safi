@@ -51,6 +51,8 @@ pnpm test
 pnpm test:e2e
 ```
 
+`pnpm lint` runs Oxlint using the root `.oxlintrc.json` configuration.
+
 The Playwright suite expects a running mock-mode stack at `http://localhost:3000` with the API at `http://127.0.0.1:4000`. Install the browser with `pnpm exec playwright install chromium` if needed. It covers sign-in, dashboard, manual prediction generation, batch progress, prediction details and history, a historical backtest, request idempotency, duplicate skipping, and prediction version preservation.
 
 ## Deployment notes

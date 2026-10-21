@@ -1,0 +1,26 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["eslint", "typescript", "nextjs"],
+  "categories": {
+    "correctness": "error"
+  },
+  "rules": {
+    "typescript/no-explicit-any": "off",
+    "typescript/no-unused-vars": "error"
+  },
+  "settings": {
+    "next": {
+      "rootDir": "apps/web/"
+    }
+  },
+  "ignorePatterns": [
+    "**/node_modules/**",
+    "**/.next/**",
+    "**/dist/**",
+    "**/src/generated/**",
+    "**/next-env.d.ts",
+    "coverage/**",
+    "playwright-report/**",
+    "test-results/**"
+  ]
+}

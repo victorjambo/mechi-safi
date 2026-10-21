@@ -15,7 +15,11 @@ describe('1X2 domain and evaluation', () => {
     expect(() => probabilitiesSchema.parse({ HOME_WIN: NaN, DRAW: 0.3, AWAY_WIN: 0.7 })).toThrow();
   });
   it('computes Brier score and log loss for the actual class', () => {
-    const result = scorePrediction({ HOME_WIN: 0.7, DRAW: 0.2, AWAY_WIN: 0.1 }, 'HOME_WIN', 'HOME_WIN');
+    const result = scorePrediction(
+      { HOME_WIN: 0.7, DRAW: 0.2, AWAY_WIN: 0.1 },
+      'HOME_WIN',
+      'HOME_WIN',
+    );
     expect(result.correct).toBe(true);
     expect(result.brierScore).toBeCloseTo(0.14);
     expect(result.logLoss).toBeCloseTo(-Math.log(0.7));

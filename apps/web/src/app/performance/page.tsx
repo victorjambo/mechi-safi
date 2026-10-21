@@ -1,7 +1,18 @@
 'use client';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Bar, BarChart, CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Legend,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
 import { api } from '@/lib/api';
 import type { Competition } from '@/lib/types';
 import { percent } from '@/lib/utils';
@@ -10,25 +21,421 @@ import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { ErrorState, Metric, PageHeading } from '@/components/common';
 
-interface Summary { totalPredictions: number; evaluatedPredictions: number; correct: number; accuracy: number | null; brierScore: number | null; logLoss: number | null; coverage: number | null }
-interface ScoreRow { period?: string; competition?: string; season?: number; model?: string; sampleSize: number; accuracy: number | null; brierScore: number | null; logLoss: number | null }
-interface Calibration { bucket: string; sampleSize: number; predicted: number | null; actual: number | null }
-interface Matrix { matrix: { predicted: string; HOME_WIN: number; DRAW: number; AWAY_WIN: number }[]; distribution: { outcome: string; predicted: number; actual: number }[]; sampleSize: number }
+interface Summary {
+  totalPredictions: number;
+  evaluatedPredictions: number;
+  correct: number;
+  accuracy: number | null;
+  brierScore: number | null;
+  logLoss: number | null;
+  coverage: number | null;
+}
+
+interface ScoreRow {
+  period?: string;
+  competition?: string;
+  season?: number;
+  model?: string;
+  sampleSize: number;
+  accuracy: number | null;
+  brierScore: number | null;
+  logLoss: number | null;
+}
+
+interface Calibration {
+  bucket: string;
+  sampleSize: number;
+  predicted: number | null;
+  actual: number | null;
+}
+
+interface Matrix {
+  matrix: { predicted: string; HOME_WIN: number; DRAW: number; AWAY_WIN: number }[];
+  distribution: { outcome: string; predicted: number; actual: number }[];
+  sampleSize: number;
+}
+
 export default function PerformancePage() {
-  const [mode, setMode] = useState<'FORWARD' | 'BACKTEST'>('FORWARD'); const [competition, setCompetition] = useState(''); const [season, setSeason] = useState(''); const [from, setFrom] = useState(''); const [to, setTo] = useState(''); const [modelVersion, setModelVersion] = useState(''); const [batchId, setBatchId] = useState(''); const [backtestId, setBacktestId] = useState('');
-  const params = new URLSearchParams({ mode, ...(competition ? { competition } : {}), ...(season ? { season } : {}), ...(from ? { from: `${from}T00:00:00Z` } : {}), ...(to ? { to: `${to}T23:59:59Z` } : {}), ...(modelVersion ? { modelVersion } : {}), ...(batchId ? { batchId } : {}), ...(backtestId ? { backtestId } : {}) });
+  const [mode, setMode] = useState<'FORWARD' | 'BACKTEST'>('FORWARD');
+  const [competition, setCompetition] = useState('');
+  const [season, setSeason] = useState('');
+  const [from, setFrom] = useState('');
+  const [to, setTo] = useState('');
+  const [modelVersion, setModelVersion] = useState('');
+  const [batchId, setBatchId] = useState('');
+  const [backtestId, setBacktestId] = useState('');
+  const params = new URLSearchParams({
+    mode,
+    ...(competition ? { competition } : {}),
+    ...(season ? { season } : {}),
+    ...(from ? { from: `${from}T00:00:00Z` } : {}),
+    ...(to ? { to: `${to}T23:59:59Z` } : {}),
+    ...(modelVersion ? { modelVersion } : {}),
+    ...(batchId ? { batchId } : {}),
+    ...(backtestId ? { backtestId } : {}),
+  });
   const key = params.toString();
-  const overview = useQuery({ queryKey: ['analytics', 'overview', key], queryFn: () => api<Summary>(`/analytics/overview?${key}`) });
-  const timeline = useQuery({ queryKey: ['analytics', 'timeline', key], queryFn: () => api<ScoreRow[]>(`/analytics/timeline?${key}`) });
-  const leagues = useQuery({ queryKey: ['analytics', 'competitions', key], queryFn: () => api<ScoreRow[]>(`/analytics/competitions?${key}`) });
-  const calibration = useQuery({ queryKey: ['analytics', 'calibration', key], queryFn: () => api<Calibration[]>(`/analytics/calibration?${key}`) });
-  const matrix = useQuery({ queryKey: ['analytics', 'matrix', key], queryFn: () => api<Matrix>(`/analytics/confusion-matrix?${key}`) });
-  const comparison = useQuery({ queryKey: ['analytics', 'comparison', key], queryFn: () => api<ScoreRow[]>(`/analytics/comparison?${key}`) });
-  const competitions = useQuery({ queryKey: ['competitions'], queryFn: () => api<Competition[]>('/competitions') });
-  const versions = useQuery({ queryKey: ['modelVersions'], queryFn: () => api<{ modelVersion: string }[]>('/analytics/model-versions') });
-  const chart = (data: unknown[], children: React.ReactNode) => <div className="h-64"><ResponsiveContainer width="100%" height="100%">{children as React.ReactElement}</ResponsiveContainer></div>;
-  return <><PageHeading title="Performance analytics" description="Evaluate 1X2 prediction quality with clearly separated live and historical metrics." /><div className="flex gap-2 border-b border-border"><button className={`px-4 py-3 text-sm font-semibold ${mode === 'FORWARD' ? 'border-b-2 border-primary text-primary' : 'text-muted-foreground'}`} onClick={() => setMode('FORWARD')}>Live predictions</button><button className={`px-4 py-3 text-sm font-semibold ${mode === 'BACKTEST' ? 'border-b-2 border-primary text-primary' : 'text-muted-foreground'}`} onClick={() => setMode('BACKTEST')}>Historical backtests</button></div><Card className="grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-4"><Select aria-label="Competition" value={competition} onChange={(e) => setCompetition(e.target.value)}><option value="">All competitions</option>{competitions.data?.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</Select><Input aria-label="Season" type="number" placeholder="Season year" value={season} onChange={(e) => setSeason(e.target.value)} /><Input aria-label="From date" type="date" value={from} onChange={(e) => setFrom(e.target.value)} /><Input aria-label="To date" type="date" value={to} onChange={(e) => setTo(e.target.value)} /><Select aria-label="Model version" value={modelVersion} onChange={(e) => setModelVersion(e.target.value)}><option value="">All model versions</option>{versions.data?.map((v) => <option key={v.modelVersion} value={v.modelVersion}>{v.modelVersion}</option>)}</Select>{mode === 'FORWARD' ? <Input aria-label="Batch ID" placeholder="Batch ID" value={batchId} onChange={(e) => setBatchId(e.target.value)} /> : <Input aria-label="Backtest run ID" placeholder="Backtest run ID" value={backtestId} onChange={(e) => setBacktestId(e.target.value)} />}</Card>
-    {overview.isError ? <ErrorState error={overview.error} retry={() => overview.refetch()} /> : <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"><Metric label="Total predictions" value={overview.data?.totalPredictions ?? '—'} detail={mode === 'FORWARD' ? 'Live forward mode' : 'Historical backtest mode'} /><Metric label="Evaluated" value={overview.data?.evaluatedPredictions ?? '—'} detail="Final eligible results" /><Metric label="1X2 accuracy" value={percent(overview.data?.accuracy)} detail={`${overview.data?.correct ?? 0} correct`} /><Metric label="Coverage" value={percent(overview.data?.coverage)} detail="Evaluated / eligible fixtures" /><Metric label="Brier score" value={overview.data?.brierScore?.toFixed(3) ?? '—'} detail="Three-class score" /><Metric label="Log loss" value={overview.data?.logLoss?.toFixed(3) ?? '—'} detail="Lower is better" /></div>}
-    <div className="grid gap-5 xl:grid-cols-2"><Card><CardHeader><CardTitle>Accuracy over time</CardTitle><CardDescription>Weekly · {timeline.data?.reduce((n, row) => n + row.sampleSize, 0) ?? 0} evaluated</CardDescription></CardHeader><CardContent>{timeline.data?.length ? chart(timeline.data, <LineChart data={timeline.data.map((row) => ({ ...row, accuracyPct: (row.accuracy ?? 0) * 100 }))}><CartesianGrid stroke="#eef2f7" vertical={false} /><XAxis dataKey="period" /><YAxis domain={[0, 100]} /><Tooltip /><Line type="monotone" dataKey="accuracyPct" stroke="#635BFF" strokeWidth={2.5} dot={false} /></LineChart>) : <div className="flex h-64 items-center justify-center text-sm text-muted-foreground">No evaluated predictions yet.</div>}</CardContent></Card><Card><CardHeader><CardTitle>Performance by competition</CardTitle><CardDescription>Accuracy by league and season · {leagues.data?.reduce((n, row) => n + row.sampleSize, 0) ?? 0} evaluated</CardDescription></CardHeader><CardContent>{leagues.data?.length ? chart(leagues.data, <BarChart data={leagues.data.map((row) => ({ ...row, name: `${row.competition} ${row.season ?? ''}`, accuracyPct: (row.accuracy ?? 0) * 100 }))}><CartesianGrid stroke="#eef2f7" vertical={false} /><XAxis dataKey="name" hide /><YAxis domain={[0, 100]} /><Tooltip /><Bar dataKey="accuracyPct" fill="#635BFF" radius={[5, 5, 0, 0]} /></BarChart>) : <div className="flex h-64 items-center justify-center text-sm text-muted-foreground">No competition scores yet.</div>}</CardContent></Card><Card><CardHeader><CardTitle>Jev vs baselines</CardTitle><CardDescription>Same evaluated fixtures for each model</CardDescription></CardHeader><CardContent>{comparison.data?.some((row) => row.sampleSize) ? chart(comparison.data, <BarChart data={comparison.data.map((row) => ({ ...row, accuracyPct: (row.accuracy ?? 0) * 100 }))}><CartesianGrid stroke="#eef2f7" vertical={false} /><XAxis dataKey="model" /><YAxis domain={[0, 100]} /><Tooltip /><Bar dataKey="accuracyPct" fill="#635BFF" radius={[5, 5, 0, 0]} /></BarChart>) : <div className="flex h-64 items-center justify-center text-sm text-muted-foreground">No model comparisons yet.</div>}</CardContent></Card><Card><CardHeader><CardTitle>Confidence calibration</CardTitle><CardDescription>Predicted likelihood versus actual success rate</CardDescription></CardHeader><CardContent>{calibration.data?.some((row) => row.sampleSize) ? chart(calibration.data, <LineChart data={calibration.data.map((row) => ({ ...row, predictedPct: (row.predicted ?? 0) * 100, actualPct: (row.actual ?? 0) * 100 }))}><CartesianGrid stroke="#eef2f7" vertical={false} /><XAxis dataKey="bucket" /><YAxis domain={[0, 100]} /><Tooltip /><Legend /><Line type="monotone" dataKey="predictedPct" name="Predicted" stroke="#635BFF" strokeWidth={2} /><Line type="monotone" dataKey="actualPct" name="Actual" stroke="#16A34A" strokeWidth={2} /></LineChart>) : <div className="flex h-64 items-center justify-center text-sm text-muted-foreground">No calibration data yet.</div>}</CardContent></Card><Card><CardHeader><CardTitle>Outcome distribution</CardTitle><CardDescription>Predicted and actual shares · n={matrix.data?.sampleSize ?? 0}</CardDescription></CardHeader><CardContent>{matrix.data?.sampleSize ? chart(matrix.data.distribution, <BarChart data={matrix.data.distribution}><CartesianGrid stroke="#eef2f7" vertical={false} /><XAxis dataKey="outcome" /><YAxis /><Tooltip /><Legend /><Bar dataKey="predicted" fill="#635BFF" /><Bar dataKey="actual" fill="#16A34A" /></BarChart>) : <div className="flex h-64 items-center justify-center text-sm text-muted-foreground">No result distribution yet.</div>}</CardContent></Card><Card><CardHeader><CardTitle>Confusion matrix</CardTitle><CardDescription>Rows are predictions; columns are final outcomes · n={matrix.data?.sampleSize ?? 0}</CardDescription></CardHeader><CardContent><div className="grid grid-cols-4 gap-1 text-center text-xs"><div></div>{['Home', 'Draw', 'Away'].map((label) => <div key={label} className="p-2 font-semibold text-muted-foreground">{label}</div>)}{matrix.data?.matrix.map((row) => <div key={row.predicted} className="contents"><div className="p-3 text-left font-semibold">{row.predicted.replace('_WIN', '').replace('_', ' ')}</div>{(['HOME_WIN', 'DRAW', 'AWAY_WIN'] as const).map((outcome) => <div key={outcome} className={`rounded-lg p-3 font-semibold ${row.predicted === outcome ? 'bg-indigo-100 text-primary' : 'bg-slate-50'}`}>{row[outcome]}</div>)}</div>)}</div></CardContent></Card></div>
-  </>;
+  const overview = useQuery({
+    queryKey: ['analytics', 'overview', key],
+    queryFn: () => api<Summary>(`/analytics/overview?${key}`),
+  });
+  const timeline = useQuery({
+    queryKey: ['analytics', 'timeline', key],
+    queryFn: () => api<ScoreRow[]>(`/analytics/timeline?${key}`),
+  });
+  const leagues = useQuery({
+    queryKey: ['analytics', 'competitions', key],
+    queryFn: () => api<ScoreRow[]>(`/analytics/competitions?${key}`),
+  });
+  const calibration = useQuery({
+    queryKey: ['analytics', 'calibration', key],
+    queryFn: () => api<Calibration[]>(`/analytics/calibration?${key}`),
+  });
+  const matrix = useQuery({
+    queryKey: ['analytics', 'matrix', key],
+    queryFn: () => api<Matrix>(`/analytics/confusion-matrix?${key}`),
+  });
+  const comparison = useQuery({
+    queryKey: ['analytics', 'comparison', key],
+    queryFn: () => api<ScoreRow[]>(`/analytics/comparison?${key}`),
+  });
+  const competitions = useQuery({
+    queryKey: ['competitions'],
+    queryFn: () => api<Competition[]>('/competitions'),
+  });
+  const versions = useQuery({
+    queryKey: ['modelVersions'],
+    queryFn: () => api<{ modelVersion: string }[]>('/analytics/model-versions'),
+  });
+  const chart = (data: unknown[], children: React.ReactNode) => (
+    <div className="h-64">
+      <ResponsiveContainer width="100%" height="100%">
+        {children as React.ReactElement}
+      </ResponsiveContainer>
+    </div>
+  );
+  return (
+    <>
+      <PageHeading
+        title="Performance analytics"
+        description="Evaluate 1X2 prediction quality with clearly separated live and historical metrics."
+      />
+      <div className="flex gap-2 border-b border-border">
+        <button
+          className={`px-4 py-3 text-sm font-semibold ${mode === 'FORWARD' ? 'border-b-2 border-primary text-primary' : 'text-muted-foreground'}`}
+          onClick={() => setMode('FORWARD')}
+        >
+          Live predictions
+        </button>
+        <button
+          className={`px-4 py-3 text-sm font-semibold ${mode === 'BACKTEST' ? 'border-b-2 border-primary text-primary' : 'text-muted-foreground'}`}
+          onClick={() => setMode('BACKTEST')}
+        >
+          Historical backtests
+        </button>
+      </div>
+      <Card className="grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-4">
+        <Select
+          aria-label="Competition"
+          value={competition}
+          onChange={(e) => setCompetition(e.target.value)}
+        >
+          <option value="">All competitions</option>
+          {competitions.data?.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
+        </Select>
+        <Input
+          aria-label="Season"
+          type="number"
+          placeholder="Season year"
+          value={season}
+          onChange={(e) => setSeason(e.target.value)}
+        />
+        <Input
+          aria-label="From date"
+          type="date"
+          value={from}
+          onChange={(e) => setFrom(e.target.value)}
+        />
+        <Input
+          aria-label="To date"
+          type="date"
+          value={to}
+          onChange={(e) => setTo(e.target.value)}
+        />
+        <Select
+          aria-label="Model version"
+          value={modelVersion}
+          onChange={(e) => setModelVersion(e.target.value)}
+        >
+          <option value="">All model versions</option>
+          {versions.data?.map((v) => (
+            <option key={v.modelVersion} value={v.modelVersion}>
+              {v.modelVersion}
+            </option>
+          ))}
+        </Select>
+        {mode === 'FORWARD' ? (
+          <Input
+            aria-label="Batch ID"
+            placeholder="Batch ID"
+            value={batchId}
+            onChange={(e) => setBatchId(e.target.value)}
+          />
+        ) : (
+          <Input
+            aria-label="Backtest run ID"
+            placeholder="Backtest run ID"
+            value={backtestId}
+            onChange={(e) => setBacktestId(e.target.value)}
+          />
+        )}
+      </Card>
+      {overview.isError ? (
+        <ErrorState error={overview.error} retry={() => overview.refetch()} />
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <Metric
+            label="Total predictions"
+            value={overview.data?.totalPredictions ?? '—'}
+            detail={mode === 'FORWARD' ? 'Live forward mode' : 'Historical backtest mode'}
+          />
+          <Metric
+            label="Evaluated"
+            value={overview.data?.evaluatedPredictions ?? '—'}
+            detail="Final eligible results"
+          />
+          <Metric
+            label="1X2 accuracy"
+            value={percent(overview.data?.accuracy)}
+            detail={`${overview.data?.correct ?? 0} correct`}
+          />
+          <Metric
+            label="Coverage"
+            value={percent(overview.data?.coverage)}
+            detail="Evaluated / eligible fixtures"
+          />
+          <Metric
+            label="Brier score"
+            value={overview.data?.brierScore?.toFixed(3) ?? '—'}
+            detail="Three-class score"
+          />
+          <Metric
+            label="Log loss"
+            value={overview.data?.logLoss?.toFixed(3) ?? '—'}
+            detail="Lower is better"
+          />
+        </div>
+      )}
+      <div className="grid gap-5 xl:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>Accuracy over time</CardTitle>
+            <CardDescription>
+              Weekly · {timeline.data?.reduce((n, row) => n + row.sampleSize, 0) ?? 0} evaluated
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {timeline.data?.length ? (
+              chart(
+                timeline.data,
+                <LineChart
+                  data={timeline.data.map((row) => ({
+                    ...row,
+                    accuracyPct: (row.accuracy ?? 0) * 100,
+                  }))}
+                >
+                  <CartesianGrid stroke="#eef2f7" vertical={false} />
+                  <XAxis dataKey="period" />
+                  <YAxis domain={[0, 100]} />
+                  <Tooltip />
+                  <Line
+                    type="monotone"
+                    dataKey="accuracyPct"
+                    stroke="#635BFF"
+                    strokeWidth={2.5}
+                    dot={false}
+                  />
+                </LineChart>,
+              )
+            ) : (
+              <div className="flex h-64 items-center justify-center text-sm text-muted-foreground">
+                No evaluated predictions yet.
+              </div>
+            )}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Performance by competition</CardTitle>
+            <CardDescription>
+              Accuracy by league and season ·{' '}
+              {leagues.data?.reduce((n, row) => n + row.sampleSize, 0) ?? 0} evaluated
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {leagues.data?.length ? (
+              chart(
+                leagues.data,
+                <BarChart
+                  data={leagues.data.map((row) => ({
+                    ...row,
+                    name: `${row.competition} ${row.season ?? ''}`,
+                    accuracyPct: (row.accuracy ?? 0) * 100,
+                  }))}
+                >
+                  <CartesianGrid stroke="#eef2f7" vertical={false} />
+                  <XAxis dataKey="name" hide />
+                  <YAxis domain={[0, 100]} />
+                  <Tooltip />
+                  <Bar dataKey="accuracyPct" fill="#635BFF" radius={[5, 5, 0, 0]} />
+                </BarChart>,
+              )
+            ) : (
+              <div className="flex h-64 items-center justify-center text-sm text-muted-foreground">
+                No competition scores yet.
+              </div>
+            )}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Jev vs baselines</CardTitle>
+            <CardDescription>Same evaluated fixtures for each model</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {comparison.data?.some((row) => row.sampleSize) ? (
+              chart(
+                comparison.data,
+                <BarChart
+                  data={comparison.data.map((row) => ({
+                    ...row,
+                    accuracyPct: (row.accuracy ?? 0) * 100,
+                  }))}
+                >
+                  <CartesianGrid stroke="#eef2f7" vertical={false} />
+                  <XAxis dataKey="model" />
+                  <YAxis domain={[0, 100]} />
+                  <Tooltip />
+                  <Bar dataKey="accuracyPct" fill="#635BFF" radius={[5, 5, 0, 0]} />
+                </BarChart>,
+              )
+            ) : (
+              <div className="flex h-64 items-center justify-center text-sm text-muted-foreground">
+                No model comparisons yet.
+              </div>
+            )}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Confidence calibration</CardTitle>
+            <CardDescription>Predicted likelihood versus actual success rate</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {calibration.data?.some((row) => row.sampleSize) ? (
+              chart(
+                calibration.data,
+                <LineChart
+                  data={calibration.data.map((row) => ({
+                    ...row,
+                    predictedPct: (row.predicted ?? 0) * 100,
+                    actualPct: (row.actual ?? 0) * 100,
+                  }))}
+                >
+                  <CartesianGrid stroke="#eef2f7" vertical={false} />
+                  <XAxis dataKey="bucket" />
+                  <YAxis domain={[0, 100]} />
+                  <Tooltip />
+                  <Legend />
+                  <Line
+                    type="monotone"
+                    dataKey="predictedPct"
+                    name="Predicted"
+                    stroke="#635BFF"
+                    strokeWidth={2}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="actualPct"
+                    name="Actual"
+                    stroke="#16A34A"
+                    strokeWidth={2}
+                  />
+                </LineChart>,
+              )
+            ) : (
+              <div className="flex h-64 items-center justify-center text-sm text-muted-foreground">
+                No calibration data yet.
+              </div>
+            )}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Outcome distribution</CardTitle>
+            <CardDescription>
+              Predicted and actual shares · n={matrix.data?.sampleSize ?? 0}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {matrix.data?.sampleSize ? (
+              chart(
+                matrix.data.distribution,
+                <BarChart data={matrix.data.distribution}>
+                  <CartesianGrid stroke="#eef2f7" vertical={false} />
+                  <XAxis dataKey="outcome" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="predicted" fill="#635BFF" />
+                  <Bar dataKey="actual" fill="#16A34A" />
+                </BarChart>,
+              )
+            ) : (
+              <div className="flex h-64 items-center justify-center text-sm text-muted-foreground">
+                No result distribution yet.
+              </div>
+            )}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Confusion matrix</CardTitle>
+            <CardDescription>
+              Rows are predictions; columns are final outcomes · n={matrix.data?.sampleSize ?? 0}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-4 gap-1 text-center text-xs">
+              <div></div>
+              {['Home', 'Draw', 'Away'].map((label) => (
+                <div key={label} className="p-2 font-semibold text-muted-foreground">
+                  {label}
+                </div>
+              ))}
+              {matrix.data?.matrix.map((row) => (
+                <div key={row.predicted} className="contents">
+                  <div className="p-3 text-left font-semibold">
+                    {row.predicted.replace('_WIN', '').replace('_', ' ')}
+                  </div>
+                  {(['HOME_WIN', 'DRAW', 'AWAY_WIN'] as const).map((outcome) => (
+                    <div
+                      key={outcome}
+                      className={`rounded-lg p-3 font-semibold ${row.predicted === outcome ? 'bg-indigo-100 text-primary' : 'bg-slate-50'}`}
+                    >
+                      {row[outcome]}
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </>
+  );
 }

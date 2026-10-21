@@ -1,1 +1,21 @@
-{"name":"@mechi/database","version":"1.0.0","private":true,"type":"module","exports":"./src/index.ts","dependencies":{"@prisma/client":"^6.17.1"},"devDependencies":{"dotenv-cli":"^10.0.0","prisma":"^6.17.1"},"scripts":{"generate":"prisma generate --schema prisma/schema.prisma","migrate":"dotenv -e ../../.env -- prisma migrate deploy --schema prisma/schema.prisma","seed":"dotenv -e ../../.env -- tsx prisma/seed.ts","build":"tsc --noEmit -p tsconfig.json","typecheck":"tsc --noEmit -p tsconfig.json"}}
+{
+  "name": "@mechi/database",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "exports": "./src/index.ts",
+  "dependencies": {
+    "@prisma/client": "^6.17.1"
+  },
+  "devDependencies": {
+    "dotenv-cli": "^10.0.0",
+    "prisma": "^6.17.1"
+  },
+  "scripts": {
+    "generate": "prisma generate --schema prisma/schema.prisma",
+    "migrate": "dotenv -e ../../.env -- prisma migrate deploy --schema prisma/schema.prisma",
+    "seed": "dotenv -e ../../.env -- tsx prisma/seed.ts",
+    "build": "tsc --noEmit -p tsconfig.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  }
+}

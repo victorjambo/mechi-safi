@@ -1,1 +1,14 @@
-{"name":"@mechi/domain","version":"1.0.0","private":true,"type":"module","exports":"./src/index.ts","dependencies":{"zod":"^3.25.67"},"scripts":{"build":"tsc --noEmit -p tsconfig.json","typecheck":"tsc --noEmit -p tsconfig.json"}}
+{
+  "name": "@mechi/domain",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "exports": "./src/index.ts",
+  "dependencies": {
+    "zod": "^3.25.67"
+  },
+  "scripts": {
+    "build": "tsc --noEmit -p tsconfig.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  }
+}

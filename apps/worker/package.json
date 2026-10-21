@@ -1,1 +1,27 @@
-{"name":"@mechi/worker","version":"1.0.0","private":true,"type":"module","scripts":{"dev":"tsx watch src/index.ts","start":"node dist/index.js","build":"tsup","typecheck":"tsc --noEmit -p tsconfig.json"},"dependencies":{"@mechi/config":"workspace:*","@mechi/database":"workspace:*","@mechi/domain":"workspace:*","@mechi/evaluation":"workspace:*","@mechi/football-data":"workspace:*","@mechi/jev":"workspace:*","@mechi/jobs":"workspace:*","@mechi/prediction":"workspace:*","@prisma/client":"^6.17.1","bullmq":"^5.63.0","dotenv":"^17.2.3","ioredis":"^5.8.1","zod":"^3.25.67"}}
+{
+  "name": "@mechi/worker",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "node dist/index.js",
+    "build": "tsup",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@mechi/config": "workspace:*",
+    "@mechi/database": "workspace:*",
+    "@mechi/domain": "workspace:*",
+    "@mechi/evaluation": "workspace:*",
+    "@mechi/football-data": "workspace:*",
+    "@mechi/jev": "workspace:*",
+    "@mechi/jobs": "workspace:*",
+    "@mechi/prediction": "workspace:*",
+    "@prisma/client": "^6.17.1",
+    "bullmq": "^5.63.0",
+    "dotenv": "^17.2.3",
+    "ioredis": "^5.8.1",
+    "zod": "^3.25.67"
+  }
+}

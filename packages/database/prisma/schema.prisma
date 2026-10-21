@@ -12,17 +12,20 @@ enum MatchOutcome {
   DRAW
   AWAY_WIN
 }
+
 enum PredictionMode {
   FORWARD
   BACKTEST
   DIAGNOSTIC
 }
+
 enum PredictionStatus {
   PENDING
   SUCCEEDED
   FAILED
   EXCLUDED
 }
+
 enum BatchStatus {
   QUEUED
   RUNNING
@@ -31,6 +34,7 @@ enum BatchStatus {
   FAILED
   CANCELLED
 }
+
 enum ItemStatus {
   QUEUED
   RUNNING
@@ -39,14 +43,17 @@ enum ItemStatus {
   FAILED
   EXCLUDED
 }
+
 enum PredictionPolicy {
   SKIP
   NEW_VERSION
 }
+
 enum TriggerSource {
   MANUAL
   SCHEDULED
 }
+
 enum BacktestStatus {
   QUEUED
   RUNNING
@@ -57,253 +64,262 @@ enum BacktestStatus {
 }
 
 model Competition {
-  id String @id
-  externalId Int? @unique
-  name String
-  emblem String?
-  enabled Boolean @default(true)
-  available Boolean @default(true)
-  seasons Season[]
-  fixtures Fixture[]
-  createdAt DateTime @default(now())
+  id         String    @id
+  externalId Int?      @unique
+  name       String
+  emblem     String?
+  enabled    Boolean   @default(true)
+  available  Boolean   @default(true)
+  seasons    Season[]
+  fixtures   Fixture[]
+  createdAt  DateTime  @default(now())
 }
 
 model Season {
-  id String @id @default(cuid())
+  id            String      @id @default(cuid())
   competitionId String
-  competition Competition @relation(fields: [competitionId], references: [id])
-  year Int
-  externalId Int?
-  startDate DateTime?
-  endDate DateTime?
-  available Boolean @default(true)
-  fixtures Fixture[]
+  competition   Competition @relation(fields: [competitionId], references: [id])
+  year          Int
+  externalId    Int?
+  startDate     DateTime?
+  endDate       DateTime?
+  available     Boolean     @default(true)
+  fixtures      Fixture[]
+
   @@unique([competitionId, year])
 }
 
 model Team {
-  id String @id @default(cuid())
-  name String
-  shortName String?
-  crest String?
-  externalIds TeamExternalId[]
-  homeFixtures Fixture[] @relation("HomeFixtures")
-  awayFixtures Fixture[] @relation("AwayFixtures")
+  id           String           @id @default(cuid())
+  name         String
+  shortName    String?
+  crest        String?
+  externalIds  TeamExternalId[]
+  homeFixtures Fixture[]        @relation("HomeFixtures")
+  awayFixtures Fixture[]        @relation("AwayFixtures")
 }
 
 model TeamExternalId {
-  id String @id @default(cuid())
-  teamId String
-  team Team @relation(fields: [teamId], references: [id])
-  provider String
+  id         String @id @default(cuid())
+  teamId     String
+  team       Team   @relation(fields: [teamId], references: [id])
+  provider   String
   externalId String
+
   @@unique([provider, externalId])
 }
 
 model Fixture {
-  id String @id @default(cuid())
-  provider String
-  externalId String
-  competitionId String
-  competition Competition @relation(fields: [competitionId], references: [id])
-  seasonId String?
-  season Season? @relation(fields: [seasonId], references: [id])
-  homeTeamId String
-  homeTeam Team @relation("HomeFixtures", fields: [homeTeamId], references: [id])
-  awayTeamId String
-  awayTeam Team @relation("AwayFixtures", fields: [awayTeamId], references: [id])
-  kickoff DateTime
-  status String
-  homeScore Int?
-  awayScore Int?
-  resultVersion Int @default(0)
+  id                 String                @id @default(cuid())
+  provider           String
+  externalId         String
+  competitionId      String
+  competition        Competition           @relation(fields: [competitionId], references: [id])
+  seasonId           String?
+  season             Season?               @relation(fields: [seasonId], references: [id])
+  homeTeamId         String
+  homeTeam           Team                  @relation("HomeFixtures", fields: [homeTeamId], references: [id])
+  awayTeamId         String
+  awayTeam           Team                  @relation("AwayFixtures", fields: [awayTeamId], references: [id])
+  kickoff            DateTime
+  status             String
+  homeScore          Int?
+  awayScore          Int?
+  resultVersion      Int                   @default(0)
   lastProviderUpdate DateTime?
-  revisions FixtureRevision[]
-  snapshots FeatureSnapshot[]
-  predictions Prediction[]
-  batchItems PredictionBatchItem[]
-  backtestFixtures BacktestRunFixture[]
+  revisions          FixtureRevision[]
+  snapshots          FeatureSnapshot[]
+  predictions        Prediction[]
+  batchItems         PredictionBatchItem[]
+  backtestFixtures   BacktestRunFixture[]
+
   @@unique([provider, externalId])
   @@index([kickoff, status])
   @@index([competitionId, kickoff])
 }
 
 model FixtureRevision {
-  id String @id @default(cuid())
-  fixtureId String
-  fixture Fixture @relation(fields: [fixtureId], references: [id])
-  recordedAt DateTime @default(now())
-  kickoff DateTime
-  status String
-  homeScore Int?
-  awayScore Int?
+  id              String   @id @default(cuid())
+  fixtureId       String
+  fixture         Fixture  @relation(fields: [fixtureId], references: [id])
+  recordedAt      DateTime @default(now())
+  kickoff         DateTime
+  status          String
+  homeScore       Int?
+  awayScore       Int?
   providerPayload Json
 }
 
 model PredictionConfig {
-  id String @id
-  model String
+  id                String            @id
+  model             String
   featureSetVersion String
-  questionVersion String
-  enabled Boolean @default(true)
-  predictions Prediction[]
-  batches PredictionBatch[]
-  backtests BacktestRun[]
+  questionVersion   String
+  enabled           Boolean           @default(true)
+  predictions       Prediction[]
+  batches           PredictionBatch[]
+  backtests         BacktestRun[]
 }
 
 model FeatureSnapshot {
-  id String @id @default(cuid())
-  fixtureId String
-  fixture Fixture @relation(fields: [fixtureId], references: [id])
-  cutoff DateTime
+  id                String       @id @default(cuid())
+  fixtureId         String
+  fixture           Fixture      @relation(fields: [fixtureId], references: [id])
+  cutoff            DateTime
   featureSetVersion String
-  provenance String
-  data Json
-  createdAt DateTime @default(now())
-  predictions Prediction[]
+  provenance        String
+  data              Json
+  createdAt         DateTime     @default(now())
+  predictions       Prediction[]
+
   @@index([fixtureId, cutoff])
 }
 
 model Prediction {
-  id String @id @default(cuid())
-  fixtureId String
-  fixture Fixture @relation(fields: [fixtureId], references: [id])
-  configId String
-  config PredictionConfig @relation(fields: [configId], references: [id])
-  snapshotId String
-  snapshot FeatureSnapshot @relation(fields: [snapshotId], references: [id])
-  mode PredictionMode
-  triggerSource TriggerSource
-  status PredictionStatus @default(PENDING)
-  modelIdentifier String
-  modelVersion String
-  cutoff DateTime
-  predictedAt DateTime @default(now())
-  predictedOutcome MatchOutcome?
-  homeProbability Float?
-  drawProbability Float?
-  awayProbability Float?
-  modelConfidence Float?
-  rawRequest Json
-  rawResponse Json?
+  id                String                @id @default(cuid())
+  fixtureId         String
+  fixture           Fixture               @relation(fields: [fixtureId], references: [id])
+  configId          String
+  config            PredictionConfig      @relation(fields: [configId], references: [id])
+  snapshotId        String
+  snapshot          FeatureSnapshot       @relation(fields: [snapshotId], references: [id])
+  mode              PredictionMode
+  triggerSource     TriggerSource
+  status            PredictionStatus      @default(PENDING)
+  modelIdentifier   String
+  modelVersion      String
+  cutoff            DateTime
+  predictedAt       DateTime              @default(now())
+  predictedOutcome  MatchOutcome?
+  homeProbability   Float?
+  drawProbability   Float?
+  awayProbability   Float?
+  modelConfidence   Float?
+  rawRequest        Json
+  rawResponse       Json?
   providerRequestId String?
-  latencyMs Int?
-  error String?
-  idempotencyKey String @unique
-  batchItems PredictionBatchItem[]
-  evaluation PredictionEvaluation?
-  backtestFixtures BacktestRunFixture[]
+  latencyMs         Int?
+  error             String?
+  idempotencyKey    String                @unique
+  batchItems        PredictionBatchItem[]
+  evaluation        PredictionEvaluation?
+  backtestFixtures  BacktestRunFixture[]
+
   @@index([fixtureId, predictedAt])
   @@index([mode, status, predictedAt])
 }
 
 model PredictionBatch {
-  id String @id @default(cuid())
-  requestKey String? @unique
-  periodHours Int
-  windowStart DateTime
-  windowEnd DateTime
-  competitions String[]
-  configId String
-  config PredictionConfig @relation(fields: [configId], references: [id])
+  id                       String                @id @default(cuid())
+  requestKey               String?               @unique
+  periodHours              Int
+  windowStart              DateTime
+  windowEnd                DateTime
+  competitions             String[]
+  configId                 String
+  config                   PredictionConfig      @relation(fields: [configId], references: [id])
   existingPredictionPolicy PredictionPolicy
-  triggerSource TriggerSource @default(MANUAL)
-  status BatchStatus @default(QUEUED)
-  totalFixtures Int @default(0)
-  generatedCount Int @default(0)
-  skippedCount Int @default(0)
-  failedCount Int @default(0)
-  createdAt DateTime @default(now())
-  startedAt DateTime?
-  completedAt DateTime?
-  items PredictionBatchItem[]
+  triggerSource            TriggerSource         @default(MANUAL)
+  status                   BatchStatus           @default(QUEUED)
+  totalFixtures            Int                   @default(0)
+  generatedCount           Int                   @default(0)
+  skippedCount             Int                   @default(0)
+  failedCount              Int                   @default(0)
+  createdAt                DateTime              @default(now())
+  startedAt                DateTime?
+  completedAt              DateTime?
+  items                    PredictionBatchItem[]
+
   @@index([createdAt])
 }
 
 model PredictionBatchItem {
-  id String @id @default(cuid())
-  batchId String
-  batch PredictionBatch @relation(fields: [batchId], references: [id])
-  fixtureId String
-  fixture Fixture @relation(fields: [fixtureId], references: [id])
+  id           String          @id @default(cuid())
+  batchId      String
+  batch        PredictionBatch @relation(fields: [batchId], references: [id])
+  fixtureId    String
+  fixture      Fixture         @relation(fields: [fixtureId], references: [id])
   predictionId String?
-  prediction Prediction? @relation(fields: [predictionId], references: [id])
-  status ItemStatus @default(QUEUED)
-  reason String?
-  attempts Int @default(0)
+  prediction   Prediction?     @relation(fields: [predictionId], references: [id])
+  status       ItemStatus      @default(QUEUED)
+  reason       String?
+  attempts     Int             @default(0)
+
   @@unique([batchId, fixtureId])
   @@index([status])
 }
 
 model PredictionEvaluation {
-  id String @id @default(cuid())
-  predictionId String @unique
-  prediction Prediction @relation(fields: [predictionId], references: [id])
+  id            String       @id @default(cuid())
+  predictionId  String       @unique
+  prediction    Prediction   @relation(fields: [predictionId], references: [id])
   resultVersion Int
   actualOutcome MatchOutcome
-  correct Boolean
-  brierScore Float
-  logLoss Float
-  evaluatedAt DateTime @default(now())
+  correct       Boolean
+  brierScore    Float
+  logLoss       Float
+  evaluatedAt   DateTime     @default(now())
 }
 
 model BacktestRun {
-  id String @id @default(cuid())
-  competitions String[]
-  seasons Int[]
-  configId String
-  config PredictionConfig @relation(fields: [configId], references: [id])
-  cutoffHours Int
+  id                   String               @id @default(cuid())
+  competitions         String[]
+  seasons              Int[]
+  configId             String
+  config               PredictionConfig     @relation(fields: [configId], references: [id])
+  cutoffHours          Int
   minHistoricalMatches Int
-  status BacktestStatus @default(QUEUED)
-  totalFixtures Int @default(0)
-  completedCount Int @default(0)
-  failedCount Int @default(0)
-  excludedCount Int @default(0)
-  limitation String?
-  createdAt DateTime @default(now())
-  startedAt DateTime?
-  completedAt DateTime?
-  fixtures BacktestRunFixture[]
+  status               BacktestStatus       @default(QUEUED)
+  totalFixtures        Int                  @default(0)
+  completedCount       Int                  @default(0)
+  failedCount          Int                  @default(0)
+  excludedCount        Int                  @default(0)
+  limitation           String?
+  createdAt            DateTime             @default(now())
+  startedAt            DateTime?
+  completedAt          DateTime?
+  fixtures             BacktestRunFixture[]
+
   @@index([createdAt])
 }
 
 model BacktestRunFixture {
-  id String @id @default(cuid())
-  runId String
-  run BacktestRun @relation(fields: [runId], references: [id])
-  fixtureId String
-  fixture Fixture @relation(fields: [fixtureId], references: [id])
+  id           String      @id @default(cuid())
+  runId        String
+  run          BacktestRun @relation(fields: [runId], references: [id])
+  fixtureId    String
+  fixture      Fixture     @relation(fields: [fixtureId], references: [id])
   predictionId String?
-  prediction Prediction? @relation(fields: [predictionId], references: [id])
-  status ItemStatus @default(QUEUED)
-  reason String?
+  prediction   Prediction? @relation(fields: [predictionId], references: [id])
+  status       ItemStatus  @default(QUEUED)
+  reason       String?
+
   @@unique([runId, fixtureId])
 }
 
 model JobExecution {
-  id String @id
-  name String
-  status String
-  attempts Int @default(0)
-  error String?
-  startedAt DateTime?
+  id          String    @id
+  name        String
+  status      String
+  attempts    Int       @default(0)
+  error       String?
+  startedAt   DateTime?
   completedAt DateTime?
-  updatedAt DateTime @updatedAt
+  updatedAt   DateTime  @updatedAt
 }
 
 model ProviderSyncState {
-  id String @id
+  id            String    @id
   lastSuccessAt DateTime?
-  lastError String?
-  cursor String?
-  updatedAt DateTime @updatedAt
+  lastError     String?
+  cursor        String?
+  updatedAt     DateTime  @updatedAt
 }
 
 model ApplicationSettings {
-  id String @id @default("default")
-  timezone String @default("Africa/Nairobi")
-  automaticPredictions Boolean @default(false)
-  automaticCutoffHours Int @default(24)
-  updatedAt DateTime @updatedAt
+  id                   String   @id @default("default")
+  timezone             String   @default("Africa/Nairobi")
+  automaticPredictions Boolean  @default(false)
+  automaticCutoffHours Int      @default(24)
+  updatedAt            DateTime @updatedAt
 }

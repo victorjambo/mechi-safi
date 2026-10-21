@@ -2,7 +2,9 @@ import { expect, test } from '@playwright/test';
 
 test('manual prediction and historical backtest workflows', async ({ page }) => {
   await page.goto('/');
-  await page.getByLabel('Admin password').fill(process.env.ADMIN_PASSWORD ?? 'change-this-long-private-password');
+  await page
+    .getByLabel('Admin password')
+    .fill(process.env.ADMIN_PASSWORD ?? 'change-this-long-private-password');
   await page.getByRole('button', { name: 'Sign in' }).click();
   await expect(page.getByRole('heading', { name: 'Good to see you' })).toBeVisible();
 
@@ -19,7 +21,14 @@ test('manual prediction and historical backtest workflows', async ({ page }) => 
   const table = page.getByRole('table');
   await expect.poll(() => table.locator('tbody tr').count()).toBeGreaterThan(1);
   const initialRows = await table.locator('tbody tr').count();
-  const firstHome = await table.locator('tbody tr').first().locator('td').nth(2).locator('span').last().innerText();
+  const firstHome = await table
+    .locator('tbody tr')
+    .first()
+    .locator('td')
+    .nth(2)
+    .locator('span')
+    .last()
+    .innerText();
   const firstCompetition = await table.locator('tbody tr').first().locator('td').nth(1).innerText();
   await page.getByLabel('Search table teams or competition').fill(firstHome);
   await expect(page.getByRole('status')).toContainText('Showing');
@@ -31,12 +40,25 @@ test('manual prediction and historical backtest workflows', async ({ page }) => 
   await expect(table.locator('tbody tr')).toHaveCount(initialRows);
   await page.getByRole('button', { name: 'Sort by Home %' }).click();
   await page.getByRole('button', { name: 'Sort by Home %, ascending' }).click();
-  await expect(page.getByRole('columnheader', { name: 'Home %' })).toHaveAttribute('aria-sort', 'descending');
-  const homePercentages = (await table.locator('tbody tr td:nth-child(5)').allTextContents()).map((value) => Number.parseFloat(value)).filter(Number.isFinite);
+  await expect(page.getByRole('columnheader', { name: 'Home %' })).toHaveAttribute(
+    'aria-sort',
+    'descending',
+  );
+  const homePercentages = (await table.locator('tbody tr td:nth-child(5)').allTextContents())
+    .map((value) => Number.parseFloat(value))
+    .filter(Number.isFinite);
   expect(homePercentages).toEqual([...homePercentages].sort((a, b) => b - a));
-  const firstStatus = await page.getByLabel('Filter table status').locator('option').nth(1).getAttribute('value');
+  const firstStatus = await page
+    .getByLabel('Filter table status')
+    .locator('option')
+    .nth(1)
+    .getAttribute('value');
   await page.getByLabel('Filter table status').selectOption(firstStatus!);
-  expect((await table.locator('tbody tr td:nth-child(9)').allTextContents()).every((value) => value.trim().replaceAll(' ', '_') === firstStatus)).toBeTruthy();
+  expect(
+    (await table.locator('tbody tr td:nth-child(9)').allTextContents()).every(
+      (value) => value.trim().replaceAll(' ', '_') === firstStatus,
+    ),
+  ).toBeTruthy();
   await page.getByLabel('Filter table outcome').selectOption('HOME_WIN');
   await expect(page.getByLabel('Filter table outcome')).toHaveValue('HOME_WIN');
   await page.getByRole('button', { name: 'Reset' }).click();
@@ -46,7 +68,10 @@ test('manual prediction and historical backtest workflows', async ({ page }) => 
   await expect(page.getByText('1X2 probability distribution')).toBeVisible();
   await expect(page.getByText('Pre-match feature snapshot')).toBeVisible();
 
-  await page.getByRole('navigation', { name: 'Main navigation' }).getByRole('link', { name: 'Prediction History' }).click();
+  await page
+    .getByRole('navigation', { name: 'Main navigation' })
+    .getByRole('link', { name: 'Prediction History' })
+    .click();
   await expect(page.getByRole('heading', { name: 'Prediction history', level: 2 })).toBeVisible();
   await page.getByRole('button', { name: 'All predictions' }).click();
   await expect(page.getByRole('link', { name: 'Details', exact: true }).first()).toBeVisible();
@@ -54,15 +79,23 @@ test('manual prediction and historical backtest workflows', async ({ page }) => 
   await page.getByRole('link', { name: 'Backtesting' }).click();
   await page.getByRole('checkbox', { name: 'Premier League' }).check();
   await page.getByRole('button', { name: '2024', exact: true }).click();
-  await expect(page.getByRole('button', { name: '2024', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByRole('button', { name: '2024', exact: true })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
   await expect(page.getByRole('button', { name: 'Start backtest' })).toBeEnabled();
-  const submitted = page.waitForResponse((response) => response.url().endsWith('/api/v1/backtests') && response.request().method() === 'POST');
+  const submitted = page.waitForResponse(
+    (response) =>
+      response.url().endsWith('/api/v1/backtests') && response.request().method() === 'POST',
+  );
   await page.getByRole('button', { name: 'Start backtest' }).click();
   const response = await submitted;
   expect(response.status()).toBe(202);
-  const created = await response.json() as { id: string };
+  const created = (await response.json()) as { id: string };
   await expect(page.getByText('Current run')).toBeVisible();
   await expect(page.getByTestId('current-backtest')).toContainText(created.id.slice(0, 8));
-  await expect(page.getByTestId('current-backtest').getByText('COMPLETED', { exact: true })).toBeVisible({ timeout: 120000 });
+  await expect(
+    page.getByTestId('current-backtest').getByText('COMPLETED', { exact: true }),
+  ).toBeVisible({ timeout: 120000 });
   await expect(page.getByText('Brier score')).toBeVisible();
 });

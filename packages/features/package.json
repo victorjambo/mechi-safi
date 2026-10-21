@@ -1,0 +1,1 @@
+{"name":"@mechi/features","version":"1.0.0","private":true,"type":"module","exports":"./src/index.ts","dependencies":{"@mechi/domain":"workspace:*"},"scripts":{"build":"tsc --noEmit -p tsconfig.json","typecheck":"tsc --noEmit -p tsconfig.json"}}

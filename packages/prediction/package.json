@@ -1,0 +1,1 @@
+{"name":"@mechi/prediction","version":"1.0.0","private":true,"type":"module","exports":"./src/index.ts","dependencies":{"@mechi/database":"workspace:*","@mechi/domain":"workspace:*","@mechi/features":"workspace:*","@mechi/jev":"workspace:*","@mechi/evaluation":"workspace:*"},"scripts":{"build":"tsc --noEmit -p tsconfig.json","typecheck":"tsc --noEmit -p tsconfig.json"}}
